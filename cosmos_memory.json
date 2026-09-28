@@ -1,0 +1,69 @@
+{
+  "investigations": [
+    {
+      "goal": "Find unusual moving objects",
+      "plan": [
+        "load_observations",
+        "compare_epochs",
+        "calculate_motion",
+        "analyze_spectrum",
+        "verify_candidate",
+        "generate_report"
+      ],
+      "verification": [
+        {
+          "hypothesis": "Moving astronomical object",
+          "confidence": 0.501414213562376,
+          "verified": false
+        },
+        {
+          "hypothesis": "Stationary astronomical source",
+          "confidence": 0.2,
+          "verified": false
+        },
+        {
+          "hypothesis": "Measurement or imaging artifact",
+          "confidence": 0.3,
+          "verified": false
+        }
+      ]
+    },
+    {
+      "goal": "Find unusual moving objects",
+      "observations": 2,
+      "evidence": [
+        {
+          "description": "Positional change detected: 0.001414 degrees",
+          "value": 0.35,
+          "source": "motion_analysis"
+        },
+        {
+          "description": "Multi-band spectral detection across 3 bands",
+          "value": 0.15,
+          "source": "spectral_analysis"
+        }
+      ],
+      "hypotheses": [
+        {
+          "name": "Moving astronomical object",
+          "confidence": 0.76
+        },
+        {
+          "name": "Stationary astronomical source",
+          "confidence": 0.3
+        },
+        {
+          "name": "Measurement or imaging artifact",
+          "confidence": 0.2
+        },
+        {
+          "name": "Transient astronomical event",
+          "confidence": 0.2
+        }
+      ],
+      "status": "SUPPORTED"
+    }
+  ],
+  "objects": [],
+  "knowledge": []
+}
