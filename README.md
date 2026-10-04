@@ -21,9 +21,9 @@
 
 | | |
 |---|---|
-| 🏆 **Event** | NASA Hackathon — *[add event name & year]* |
-| 🎯 **Challenge** | *[add challenge / track name]* |
-| 👥 **Team** | *[add team name]* |
+| 🏆 **Event** | NASA Hackathon — space app |
+| 🎯 **Challenge** | PlanetX and SpaceX |
+| 👥 **Team** | CodeForIndia |
 | 🏫 **College** | Karpagam College of Engineering, Coimbatore |
 
 ---
