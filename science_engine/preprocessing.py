@@ -56,3 +56,33 @@ class ImagePreprocessor:
             "cleaned": cleaned,
             "normalized": normalized
         }
+def normalize_with_reference(
+    self,
+    data,
+    reference
+):
+
+    data = np.asarray(
+        data,
+        dtype=np.float64
+    )
+
+    reference = np.asarray(
+        reference,
+        dtype=np.float64
+    )
+
+    minimum = reference.min()
+    maximum = reference.max()
+
+    if maximum == minimum:
+
+        return np.zeros_like(data)
+
+    normalized = (
+        data - minimum
+    ) / (
+        maximum - minimum
+    )
+
+    return normalized

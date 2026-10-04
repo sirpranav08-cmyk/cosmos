@@ -6,28 +6,48 @@ class SourceDetector:
 
     def detect(
         self,
-        difference,
-        threshold=0.1
+        image,
+        threshold=0.1,
+        min_pixels=1,
+        max_pixels=1000
     ):
 
-        difference = np.asarray(
-            difference,
+        image = np.asarray(
+            image,
             dtype=np.float64
         )
 
-        # Absolute signal change
-        signal = np.abs(difference)
+        # --------------------------------------------------
+        # 1. Remove large-scale background
+        # --------------------------------------------------
 
-        # Threshold
+        background = np.median(image)
+
+        signal = image - background
+
+        # We are interested in positive sources
+        signal = np.maximum(signal, 0.0)
+
+        # --------------------------------------------------
+        # 2. Threshold
+        # --------------------------------------------------
+
         mask = signal > threshold
 
-        # Find connected regions
+        # --------------------------------------------------
+        # 3. Connected components
+        # --------------------------------------------------
+
         labeled, num_sources = label(mask)
 
         sources = []
 
         if num_sources == 0:
             return sources
+
+        # --------------------------------------------------
+        # 4. Analyze each component
+        # --------------------------------------------------
 
         centers = center_of_mass(
             signal,
@@ -46,27 +66,38 @@ class SourceDetector:
                 labeled == source_id
             )
 
+            pixel_count = int(
+                np.sum(pixels)
+            )
+
+            # Ignore extremely large background regions
+            if pixel_count < min_pixels:
+                continue
+
+            if pixel_count > max_pixels:
+                continue
+
             values = signal[pixels]
 
             sources.append({
 
-                "source_id": source_id,
+                "source_id":
+                    len(sources) + 1,
 
-                "x": float(x),
+                "x":
+                    float(x),
 
-                "y": float(y),
+                "y":
+                    float(y),
 
-                "peak_signal": float(
-                    np.max(values)
-                ),
+                "peak_signal":
+                    float(np.max(values)),
 
-                "total_signal": float(
-                    np.sum(values)
-                ),
+                "total_signal":
+                    float(np.sum(values)),
 
-                "pixel_count": int(
-                    np.sum(pixels)
-                )
+                "pixel_count":
+                    pixel_count
             })
 
         return sources

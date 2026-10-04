@@ -31,43 +31,16 @@ class SciencePipeline:
 
         return result["normalized"]
 
-    def compare(
+    # ========================================================
+    # ADD WCS COORDINATES
+    # ========================================================
+
+    def _add_wcs_coordinates(
         self,
-        image_a,
-        image_b,
+        sources,
         header
     ):
 
-        # Align second observation
-        alignment = self.aligner.estimate_shift(
-            image_a,
-            image_b
-        )
-
-        aligned_b = self.aligner.align(
-            image_b,
-            alignment["shift_x"],
-            alignment["shift_y"]
-        )
-
-        # Difference image
-        difference = self.difference.calculate(
-            image_a,
-            aligned_b
-        )
-
-        change = self.difference.detect_changes(
-            difference["difference"],
-            threshold=0.1
-        )
-
-        # Detect sources
-        sources = self.detector.detect(
-            difference["difference"],
-            threshold=0.1
-        )
-
-        # WCS
         mapper = WCSMapper(header)
 
         for source in sources:
@@ -80,9 +53,133 @@ class SciencePipeline:
             source["ra"] = sky["ra"]
             source["dec"] = sky["dec"]
 
+        return sources
+
+    # ========================================================
+    # COMPARE TWO OBSERVATIONS
+    # ========================================================
+
+    def compare(
+        self,
+        image_a,
+        image_b,
+        header
+    ):
+
+        # ----------------------------------------------------
+        # STEP 1: ALIGN SECOND OBSERVATION
+        # ----------------------------------------------------
+
+        alignment = self.aligner.estimate_shift(
+            image_a,
+            image_b
+        )
+
+        aligned_b = self.aligner.align(
+            image_b,
+            alignment["shift_x"],
+            alignment["shift_y"]
+        )
+
+        # ----------------------------------------------------
+        # STEP 2: DETECT SOURCES IN EPOCH A
+        # ----------------------------------------------------
+
+        sources_epoch_a = self.detector.detect(
+            image_a,
+            threshold=0.1
+        )
+
+        # ----------------------------------------------------
+        # STEP 3: DETECT SOURCES IN EPOCH B
+        # ----------------------------------------------------
+
+        sources_epoch_b = self.detector.detect(
+            aligned_b,
+            threshold=0.1
+        )
+
+        # ----------------------------------------------------
+        # STEP 4: WCS FOR EPOCH A
+        # ----------------------------------------------------
+
+        sources_epoch_a = (
+            self._add_wcs_coordinates(
+                sources_epoch_a,
+                header
+            )
+        )
+
+        # ----------------------------------------------------
+        # STEP 5: WCS FOR EPOCH B
+        # ----------------------------------------------------
+
+        sources_epoch_b = (
+            self._add_wcs_coordinates(
+                sources_epoch_b,
+                header
+            )
+        )
+
+        # ----------------------------------------------------
+        # STEP 6: DIFFERENCE IMAGE
+        # ----------------------------------------------------
+
+        difference = self.difference.calculate(
+            image_a,
+            aligned_b
+        )
+
+        # ----------------------------------------------------
+        # STEP 7: CHANGE DETECTION
+        # ----------------------------------------------------
+
+        change = self.difference.detect_changes(
+            difference["difference"],
+            threshold=0.1
+        )
+
+        # ----------------------------------------------------
+        # STEP 8: DIFFERENCE SOURCES
+        # ----------------------------------------------------
+
+        difference_sources = self.detector.detect(
+            difference["difference"],
+            threshold=0.1
+        )
+
+        difference_sources = (
+            self._add_wcs_coordinates(
+                difference_sources,
+                header
+            )
+        )
+
+        # ----------------------------------------------------
+        # RETURN COMPLETE SCIENCE RESULT
+        # ----------------------------------------------------
+
         return {
-            "alignment": alignment,
-            "difference": difference,
-            "change": change,
-            "sources": sources
+
+            "alignment":
+                alignment,
+
+            "difference":
+                difference,
+
+            "change":
+                change,
+
+            # Sources detected independently
+            # in each observation.
+            "sources_epoch_a":
+                sources_epoch_a,
+
+            "sources_epoch_b":
+                sources_epoch_b,
+
+            # Sources detected from the
+            # difference image.
+            "sources":
+                difference_sources
         }

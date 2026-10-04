@@ -12,9 +12,9 @@ class ReflectionEngine:
             "status": "UNCERTAIN"
         }
 
-        # --------------------------------
-        # Check observation count
-        # --------------------------------
+        # ====================================================
+        # CHECK OBSERVATION COUNT
+        # ====================================================
 
         if len(observations) < 3:
 
@@ -37,9 +37,9 @@ class ReflectionEngine:
                 "Multiple observation epochs are available."
             )
 
-        # --------------------------------
-        # Check motion evidence
-        # --------------------------------
+        # ====================================================
+        # CHECK MOTION EVIDENCE
+        # ====================================================
 
         has_motion = any(
             e.get("type") == "motion"
@@ -63,9 +63,9 @@ class ReflectionEngine:
                 "calculate_motion"
             )
 
-        # --------------------------------
-        # Check spectral evidence
-        # --------------------------------
+        # ====================================================
+        # CHECK SPECTRAL EVIDENCE
+        # ====================================================
 
         has_spectrum = any(
             e.get("type") == "spectrum"
@@ -89,9 +89,9 @@ class ReflectionEngine:
                 "analyze_spectrum"
             )
 
-        # --------------------------------
-        # Check artifact analysis
-        # --------------------------------
+        # ====================================================
+        # CHECK ARTIFACT EVIDENCE
+        # ====================================================
 
         has_artifact_check = any(
             e.get("type") == "artifact_check"
@@ -99,7 +99,13 @@ class ReflectionEngine:
             if isinstance(e, dict)
         )
 
-        if not has_artifact_check:
+        if has_artifact_check:
+
+            reflection["reasoning"].append(
+                "Artifact verification has been performed."
+            )
+
+        else:
 
             reflection["missing_evidence"].append(
                 "Imaging artifact verification"
@@ -109,23 +115,52 @@ class ReflectionEngine:
                 "check_artifacts"
             )
 
-        else:
+        # ====================================================
+        # CHECK CATALOG EVIDENCE
+        # ====================================================
+
+        has_catalog_match = any(
+            e.get("type") == "catalog_match"
+            for e in evidence
+            if isinstance(e, dict)
+        )
+
+        if has_catalog_match:
 
             reflection["reasoning"].append(
-                "Artifact verification has been performed."
+                "Astronomical catalog cross-match "
+                "has been performed."
             )
 
-        # --------------------------------
-        # Determine status
-        # --------------------------------
+        else:
+
+            reflection["missing_evidence"].append(
+                "Astronomical catalog cross-match"
+            )
+
+            reflection["recommended_actions"].append(
+                "cross_match_catalog"
+            )
+
+        # ====================================================
+        # DETERMINE STATUS
+        # ====================================================
 
         if not reflection["missing_evidence"]:
 
-            reflection["status"] = "READY_FOR_VERIFICATION"
+            reflection["status"] = (
+                "READY_FOR_VERIFICATION"
+            )
 
         else:
 
-            reflection["status"] = "MORE_EVIDENCE_REQUIRED"
+            reflection["status"] = (
+                "MORE_EVIDENCE_REQUIRED"
+            )
+
+        # ====================================================
+        # STORE REFLECTION
+        # ====================================================
 
         investigation.reflect(
             reflection

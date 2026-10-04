@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>COSMOS Mission Control</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #05070c;
+            color: #e8eefc;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            padding: 24px 35px;
+            border-bottom: 1px solid #1d2638;
+            background: #080c14;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 4px;
+        }
+
+        header p {
+            color: #7f8da8;
+            margin-bottom: 0;
+        }
+
+        .container {
+            padding: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: #0b101a;
+            border: 1px solid #1c2739;
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        h2 {
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #8ea2c5;
+        }
+
+        .candidate {
+            font-size: 24px;
+            margin: 15px 0;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 20px;
+            background: #2c2410;
+            color: #ffc857;
+        }
+
+        .evidence {
+            padding: 10px 0;
+            border-bottom: 1px solid #172033;
+        }
+
+        .bar {
+            height: 12px;
+            background: #182234;
+            border-radius: 10px;
+            margin-top: 7px;
+            overflow: hidden;
+        }
+
+        .fill {
+            height: 100%;
+            background: #5ca9ff;
+            border-radius: 10px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #172033;
+        }
+
+        .green {
+            color: #62e6a5;
+        }
+
+        .blue {
+            color: #67b7ff;
+        }
+
+        button {
+            border: 0;
+            padding: 13px 25px;
+            border-radius: 8px;
+            background: #4f9cff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #3185eb;
+        }
+
+        #log {
+            background: #05080e;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 130px;
+            font-family: monospace;
+            color: #9db0d0;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>COSMOS</h1>
+    <p>Autonomous Astronomical Investigation System</p>
+</header>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Candidate</h2>
+
+        <div class="candidate" id="candidate">
+            Loading...
+        </div>
+
+        <div class="status" id="status">
+            UNKNOWN
+        </div>
+
+        <h2>Motion</h2>
+
+        <div class="row">
+            <span>ΔX</span>
+            <span id="dx">-</span>
+        </div>
+
+        <div class="row">
+            <span>ΔY</span>
+            <span id="dy">-</span>
+        </div>
+
+        <div class="row">
+            <span>Displacement</span>
+            <span id="displacement">-</span>
+        </div>
+
+        <div class="row">
+            <span>Velocity</span>
+            <span id="velocity">-</span>
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Hypothesis Engine</h2>
+
+        <div id="hypotheses"></div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Scientific Evidence</h2>
+
+        <div id="evidence"></div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Catalog Cross-Match</h2>
+
+        <div class="row">
+            <span>Matched</span>
+            <span class="green" id="matched">-</span>
+        </div>
+
+        <div class="row">
+            <span>Catalog ID</span>
+            <span id="catalog_id">-</span>
+        </div>
+
+        <div class="row">
+            <span>Name</span>
+            <span id="catalog_name">-</span>
+        </div>
+
+        <div class="row">
+            <span>Distance</span>
+            <span id="catalog_distance">-</span>
+        </div>
+
+    </div>
+
+
+    <div class="card full">
+
+        <h2>COSMOS Reasoning</h2>
+
+        <div id="log">
+            Initializing COSMOS...
+        </div>
+
+        <br>
+
+        <button onclick="runInvestigation()">
+            RUN INVESTIGATION
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+async function loadStatus() {
+
+    const response = await fetch("/api/status");
+
+    const data = await response.json();
+
+    document.getElementById("candidate").innerText =
+        data.candidate;
+
+    document.getElementById("status").innerText =
+        data.status;
+
+
+    document.getElementById("dx").innerText =
+        data.motion.delta_x;
+
+    document.getElementById("dy").innerText =
+        data.motion.delta_y;
+
+    document.getElementById("displacement").innerText =
+        data.motion.displacement;
+
+    document.getElementById("velocity").innerText =
+        data.motion.velocity;
+
+
+    const hypotheses =
+        document.getElementById("hypotheses");
+
+    hypotheses.innerHTML = "";
+
+    for (const [name, value] of
+         Object.entries(data.hypotheses)) {
+
+        const percentage =
+            Math.round(value * 100);
+
+        hypotheses.innerHTML += `
+            <div class="evidence">
+                <div class="row">
+                    <span>${name}</span>
+                    <span>${percentage}%</span>
+                </div>
+
+                <div class="bar">
+                    <div
+                        class="fill"
+                        style="width:${percentage}%">
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+
+    const evidence =
+        document.getElementById("evidence");
+
+    evidence.innerHTML = "";
+
+    for (const item of data.evidence) {
+
+        evidence.innerHTML += `
+            <div class="evidence">
+                ✓ ${item}
+            </div>
+        `;
+    }
+
+
+    document.getElementById("matched").innerText =
+        data.catalog.matched ? "TRUE" : "FALSE";
+
+    document.getElementById("catalog_id").innerText =
+        data.catalog.catalog_id;
+
+    document.getElementById("catalog_name").innerText =
+        data.catalog.name;
+
+    document.getElementById("catalog_distance").innerText =
+        data.catalog.distance_arcsec +
+        " arcsec";
+}
+
+
+function runInvestigation() {
+
+    const log =
+        document.getElementById("log");
+
+    log.innerHTML = "";
+
+    const steps = [
+
+        "Loading FITS observation...",
+
+        "Detecting astronomical sources...",
+
+        "Comparing observation epochs...",
+
+        "Motion detected: ΔX=4, ΔY=3",
+
+        "Calculating displacement: 5.0 pixels...",
+
+        "Analyzing spectral evidence...",
+
+        "Cross-matching astronomical catalog...",
+
+        "Catalog match: STAR-001",
+
+        "Updating hypothesis probabilities...",
+
+        "COSMOS reflection...",
+
+        "MORE_EVIDENCE_REQUIRED"
+    ];
+
+    let i = 0;
+
+    function nextStep() {
+
+        if (i >= steps.length)
+            return;
+
+        log.innerHTML +=
+            "> " + steps[i] + "<br>";
+
+        i++;
+
+        setTimeout(nextStep, 500);
+    }
+
+    nextStep();
+}
+
+
+loadStatus();
+
+</script>
+
+</body>
+
+</html>

@@ -13,6 +13,10 @@ class HypothesisManager:
 
         evidence_type = evidence.get("type")
 
+        # --------------------------------
+        # Motion evidence
+        # --------------------------------
+
         if evidence_type == "motion":
 
             self.hypotheses[
@@ -22,6 +26,10 @@ class HypothesisManager:
             self.hypotheses[
                 "Stationary astronomical source"
             ] -= 0.10
+
+        # --------------------------------
+        # Artifact evidence
+        # --------------------------------
 
         elif evidence_type == "artifact_check":
 
@@ -45,12 +53,81 @@ class HypothesisManager:
                 self.hypotheses[
                     "Measurement or imaging artifact"
                 ] += 0.20
+        elif evidence_type == "catalog_match":
+
+            matches = evidence.get(
+            "matches",
+            []
+        )
+
+            if matches:
+
+                self.hypotheses[
+                "Stationary astronomical source"
+                ] += 0.20
+
+                self.hypotheses[
+                "Moving astronomical object"
+                ] -= 0.05
+
+                self.hypotheses[
+                    "Transient astronomical event"
+                ] -= 0.05
+
+            else:
+
+                self.hypotheses[
+            "Moving astronomical object"
+            ] += 0.05
+
+                self.hypotheses[
+            "Transient astronomical event"
+            ] += 0.05
+        # --------------------------------
+        # Spectral evidence
+        # --------------------------------
 
         elif evidence_type == "spectrum":
 
             self.hypotheses[
                 "Moving astronomical object"
             ] += 0.10
+
+        # --------------------------------
+        # Catalog evidence
+        # --------------------------------
+
+        elif evidence_type == "catalog_match":
+
+            matched = evidence.get(
+                "matched",
+                False
+            )
+
+            if matched:
+
+                # A catalog identification supports
+                # the interpretation that the candidate
+                # corresponds to a known astronomical source.
+
+                self.hypotheses[
+                    "Stationary astronomical source"
+                ] += 0.20
+
+                self.hypotheses[
+                    "Transient astronomical event"
+                ] -= 0.05
+
+            else:
+
+                # An unmatched source does not prove
+                # that it is moving or transient.
+                # It simply leaves those possibilities
+                # less constrained.
+
+                self.hypotheses[
+                    "Transient astronomical event"
+                ] += 0.05
 
         self._normalize()
 
@@ -59,6 +136,7 @@ class HypothesisManager:
     def _normalize(self):
 
         # Prevent negative probabilities
+
         for name in self.hypotheses:
 
             self.hypotheses[name] = max(
@@ -95,7 +173,12 @@ class HypothesisManager:
     def report(self):
 
         return {
-            "hypotheses": self.hypotheses.copy(),
-            "strongest": self.strongest(),
-            "confidence": self.confidence()
+            "hypotheses":
+                self.hypotheses.copy(),
+
+            "strongest":
+                self.strongest(),
+
+            "confidence":
+                self.confidence()
         }
